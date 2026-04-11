@@ -2,17 +2,51 @@ package com.ecommerce.support.tools;
 
 import com.ecommerce.support.model.Order;
 import com.ecommerce.support.repository.OrderRepository;
+import com.google.adk.tools.Annotations;
 
 import java.util.List;
 import java.util.Optional;
 
 public class OrderTools {
 
+    private static volatile OrderTools INSTANCE;
+
     private final OrderRepository orderRepository;
 
     public OrderTools(OrderRepository orderRepository) {
         this.orderRepository = orderRepository;
     }
+
+    /**
+     * Registers the instance to be used by the static tool methods required by ADK FunctionTool.
+     */
+    public static void register(OrderTools instance) {
+        INSTANCE = instance;
+    }
+
+    // -------------------------------------------------------------------------
+    // Static methods — required by ADK FunctionTool (only supports static methods).
+    // @Schema(name=...) ensures the LLM sees the canonical tool name.
+    // -------------------------------------------------------------------------
+
+    @Annotations.Schema(name = "getOrderById", description = "Get order details by order ID")
+    public static String getOrderByIdTool(String orderId) {
+        return INSTANCE.getOrderById(orderId);
+    }
+
+    @Annotations.Schema(name = "listOrdersByCustomer", description = "List all orders for a customer")
+    public static String listOrdersByCustomerTool(String customerId) {
+        return INSTANCE.listOrdersByCustomer(customerId);
+    }
+
+    @Annotations.Schema(name = "trackOrder", description = "Track the shipment status of an order")
+    public static String trackOrderTool(String orderId) {
+        return INSTANCE.trackOrder(orderId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Instance methods — preserved for direct use and testing
+    // -------------------------------------------------------------------------
 
     public String getOrderById(String orderId) {
         if (orderId == null || orderId.isBlank()) {

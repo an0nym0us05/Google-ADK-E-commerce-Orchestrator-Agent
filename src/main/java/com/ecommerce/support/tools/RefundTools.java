@@ -2,6 +2,7 @@ package com.ecommerce.support.tools;
 
 import com.ecommerce.support.model.Refund;
 import com.ecommerce.support.repository.RefundRepository;
+import com.google.adk.tools.Annotations;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -10,11 +11,44 @@ import java.util.UUID;
 
 public class RefundTools {
 
+    private static volatile RefundTools INSTANCE;
+
     private final RefundRepository refundRepository;
 
     public RefundTools(RefundRepository refundRepository) {
         this.refundRepository = refundRepository;
     }
+
+    /**
+     * Registers the instance to be used by the static tool methods required by ADK FunctionTool.
+     */
+    public static void register(RefundTools instance) {
+        INSTANCE = instance;
+    }
+
+    // -------------------------------------------------------------------------
+    // Static methods — required by ADK FunctionTool (only supports static methods).
+    // @Schema(name=...) ensures the LLM sees the canonical tool name.
+    // -------------------------------------------------------------------------
+
+    @Annotations.Schema(name = "getRefundStatus", description = "Get the status of a refund by refund ID")
+    public static String getRefundStatusTool(String refundId) {
+        return INSTANCE.getRefundStatus(refundId);
+    }
+
+    @Annotations.Schema(name = "createRefundRequest", description = "Create a new refund request for an order")
+    public static String createRefundRequestTool(String orderId, String reason) {
+        return INSTANCE.createRefundRequest(orderId, reason);
+    }
+
+    @Annotations.Schema(name = "listRefundsByCustomer", description = "List all refunds for a customer")
+    public static String listRefundsByCustomerTool(String customerId) {
+        return INSTANCE.listRefundsByCustomer(customerId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Instance methods — preserved for direct use and testing
+    // -------------------------------------------------------------------------
 
     public String getRefundStatus(String refundId) {
         if (refundId == null || refundId.isBlank()) {
