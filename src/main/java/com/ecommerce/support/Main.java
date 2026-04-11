@@ -38,7 +38,7 @@ public class Main {
 
         // Wire up tools
         OrderTools orderTools = new OrderTools(orderRepo);
-        RefundTools refundTools = new RefundTools(refundRepo);
+        RefundTools refundTools = new RefundTools(refundRepo, orderRepo);
         ProductTools productTools = new ProductTools(productRepo);
 
         // Build agent graph

@@ -31,16 +31,25 @@ public class OrderTools {
 
     @Annotations.Schema(name = "getOrderById", description = "Get order details by order ID")
     public static String getOrderByIdTool(String orderId) {
+        if (INSTANCE == null) {
+            throw new IllegalStateException("OrderTools not registered. Call OrderTools.register() before using tool methods.");
+        }
         return INSTANCE.getOrderById(orderId);
     }
 
     @Annotations.Schema(name = "listOrdersByCustomer", description = "List all orders for a customer")
     public static String listOrdersByCustomerTool(String customerId) {
+        if (INSTANCE == null) {
+            throw new IllegalStateException("OrderTools not registered. Call OrderTools.register() before using tool methods.");
+        }
         return INSTANCE.listOrdersByCustomer(customerId);
     }
 
     @Annotations.Schema(name = "trackOrder", description = "Track the shipment status of an order")
     public static String trackOrderTool(String orderId) {
+        if (INSTANCE == null) {
+            throw new IllegalStateException("OrderTools not registered. Call OrderTools.register() before using tool methods.");
+        }
         return INSTANCE.trackOrder(orderId);
     }
 

@@ -1,5 +1,6 @@
 package com.ecommerce.support.tools;
 
+import com.ecommerce.support.repository.mock.MockOrderRepository;
 import com.ecommerce.support.repository.mock.MockRefundRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,7 @@ class RefundToolsTest {
 
     @BeforeEach
     void setUp() {
-        tools = new RefundTools(new MockRefundRepository());
+        tools = new RefundTools(new MockRefundRepository(), new MockOrderRepository());
     }
 
     @Test

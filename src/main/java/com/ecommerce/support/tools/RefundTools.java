@@ -1,6 +1,7 @@
 package com.ecommerce.support.tools;
 
 import com.ecommerce.support.model.Refund;
+import com.ecommerce.support.repository.OrderRepository;
 import com.ecommerce.support.repository.RefundRepository;
 import com.google.adk.tools.Annotations;
 
@@ -14,9 +15,11 @@ public class RefundTools {
     private static volatile RefundTools INSTANCE;
 
     private final RefundRepository refundRepository;
+    private final OrderRepository orderRepository;
 
-    public RefundTools(RefundRepository refundRepository) {
+    public RefundTools(RefundRepository refundRepository, OrderRepository orderRepository) {
         this.refundRepository = refundRepository;
+        this.orderRepository = orderRepository;
     }
 
     /**
@@ -33,16 +36,25 @@ public class RefundTools {
 
     @Annotations.Schema(name = "getRefundStatus", description = "Get the status of a refund by refund ID")
     public static String getRefundStatusTool(String refundId) {
+        if (INSTANCE == null) {
+            throw new IllegalStateException("RefundTools not registered. Call RefundTools.register() before using tool methods.");
+        }
         return INSTANCE.getRefundStatus(refundId);
     }
 
     @Annotations.Schema(name = "createRefundRequest", description = "Create a new refund request for an order")
     public static String createRefundRequestTool(String orderId, String reason) {
+        if (INSTANCE == null) {
+            throw new IllegalStateException("RefundTools not registered. Call RefundTools.register() before using tool methods.");
+        }
         return INSTANCE.createRefundRequest(orderId, reason);
     }
 
     @Annotations.Schema(name = "listRefundsByCustomer", description = "List all refunds for a customer")
     public static String listRefundsByCustomerTool(String customerId) {
+        if (INSTANCE == null) {
+            throw new IllegalStateException("RefundTools not registered. Call RefundTools.register() before using tool methods.");
+        }
         return INSTANCE.listRefundsByCustomer(customerId);
     }
 
@@ -71,8 +83,12 @@ public class RefundTools {
         if (reason == null || reason.isBlank()) {
             return "Error: reason is required.";
         }
+        // Look up the customer who owns this order
+        String customerId = orderRepository.findById(orderId)
+            .map(order -> order.customerId())
+            .orElse("UNKNOWN");
         String newId = "REF-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        Refund refund = new Refund(newId, orderId, "UNKNOWN", "PENDING", reason, LocalDate.now());
+        Refund refund = new Refund(newId, orderId, customerId, "PENDING", reason, LocalDate.now());
         refundRepository.save(refund);
         return String.format(
             "Refund request created successfully. Refund ID: %s | Order: %s | Status: PENDING | Reason: %s. You will hear back within 3-5 business days.",
