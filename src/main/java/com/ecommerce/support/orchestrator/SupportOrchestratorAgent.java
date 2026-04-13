@@ -1,13 +1,13 @@
 package com.ecommerce.support.orchestrator;
 
+import com.ecommerce.support.agents.OrderAgent;
+import com.ecommerce.support.agents.ProductAgent;
+import com.ecommerce.support.agents.RefundAgent;
+import com.ecommerce.support.tools.OrderTools;
+import com.ecommerce.support.tools.ProductTools;
+import com.ecommerce.support.tools.RefundTools;
 import com.google.adk.agents.LlmAgent;
 import com.google.adk.tools.AgentTool;
-import com.ecommerce.support.agents.OrderAgent;
-import com.ecommerce.support.agents.RefundAgent;
-import com.ecommerce.support.agents.ProductAgent;
-import com.ecommerce.support.tools.OrderTools;
-import com.ecommerce.support.tools.RefundTools;
-import com.ecommerce.support.tools.ProductTools;
 
 public class SupportOrchestratorAgent {
 
@@ -24,7 +24,7 @@ public class SupportOrchestratorAgent {
         return LlmAgent.builder()
             .name("support-orchestrator")
             .description("Top-level e-commerce support dispatcher.")
-            .model("gemini-2.0-flash")
+            .model("gemini-2.5-flash")
             .instruction("""
                 You are a friendly support dispatcher for an e-commerce store.
 

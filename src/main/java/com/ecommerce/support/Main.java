@@ -1,12 +1,8 @@
 package com.ecommerce.support;
 
-import com.google.adk.agents.LlmAgent;
-import com.google.adk.events.Event;
-import com.google.adk.runner.Runner;
-import com.google.adk.sessions.InMemorySessionService;
-import com.google.adk.sessions.Session;
-import com.google.genai.types.Content;
-import com.google.genai.types.Part;
+import java.util.List;
+import java.util.Scanner;
+
 import com.ecommerce.support.orchestrator.SupportOrchestratorAgent;
 import com.ecommerce.support.repository.mock.MockOrderRepository;
 import com.ecommerce.support.repository.mock.MockProductRepository;
@@ -14,10 +10,16 @@ import com.ecommerce.support.repository.mock.MockRefundRepository;
 import com.ecommerce.support.tools.OrderTools;
 import com.ecommerce.support.tools.ProductTools;
 import com.ecommerce.support.tools.RefundTools;
-import io.reactivex.rxjava3.core.Flowable;
+import com.google.adk.agents.LlmAgent;
+import com.google.adk.events.Event;
+import com.google.adk.runner.Runner;
+import com.google.adk.sessions.InMemorySessionService;
+import com.google.adk.sessions.Session;
+import com.google.adk.web.AdkWebServer;
+import com.google.genai.types.Content;
+import com.google.genai.types.Part;
 
-import java.util.List;
-import java.util.Scanner;
+import io.reactivex.rxjava3.core.Flowable;
 
 public class Main {
 
@@ -51,8 +53,20 @@ public class Main {
                 .blockingGet();
 
         // Wire runner
-        Runner runner = new Runner(orchestrator, APP_NAME, null, sessionService);
+        Runner runner = Runner.builder()
+        .agent(orchestrator)
+        .appName(APP_NAME)
+        .sessionService(sessionService)
+        .build();
 
+        // Start Dev UI on a background (non-daemon) thread so the CLI loop can run alongside it
+        Thread devUiThread = new Thread(() -> AdkWebServer.start(orchestrator), "adk-dev-ui");
+        devUiThread.setDaemon(false);
+        devUiThread.start();
+
+        // Then your Scanner loop continues as-is
+        System.out.println("E-Commerce Support Agent ready...");
+        System.out.println("Dev UI available at http://localhost:8080");
         System.out.println("E-Commerce Support Agent ready. Type 'quit' to exit.\n");
 
         Scanner scanner = new Scanner(System.in);

@@ -1,8 +1,8 @@
 package com.ecommerce.support.agents;
 
+import com.ecommerce.support.tools.RefundTools;
 import com.google.adk.agents.LlmAgent;
 import com.google.adk.tools.FunctionTool;
-import com.ecommerce.support.tools.RefundTools;
 
 public class RefundAgent {
 
@@ -13,7 +13,7 @@ public class RefundAgent {
         return LlmAgent.builder()
             .name("refund-agent")
             .description("Handles customer refund requests: checking refund status, initiating new refunds, and listing past refunds.")
-            .model("gemini-2.0-flash")
+            .model("gemini-2.5-flash")
             .instruction("""
                 You are a refund support specialist for an e-commerce store.
                 Help customers check the status of existing refunds or create new refund requests.

@@ -20,7 +20,15 @@
         <dependency>
             <groupId>com.google.adk</groupId>
             <artifactId>google-adk</artifactId>
-            <version>0.1.0</version>
+            <version>1.0.0</version>
+        </dependency>
+
+        <!-- Google ADK Dev UI -->
+        <dependency>
+            <groupId>com.google.adk</groupId>
+            <artifactId>google-adk-dev</artifactId>
+            <version>1.0.0</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- JUnit 5 -->
