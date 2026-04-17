@@ -68,14 +68,14 @@ public class Main {
 
         LOGGER.info("E-Commerce Support Agent ready...");
         LOGGER.info("Dev UI available at http://localhost:8080");
-        LOGGER.info("E-Commerce Support Agent ready. Type 'quit' to exit.\n");
+        LOGGER.info("E-Commerce Support Agent ready. Type 'quit' to exit.");
 
         try (Scanner scanner = new Scanner(System.in)) {
             while (true) {
-                LOGGER.info("You: ");
+                System.out.print("You: ");
                 String input = scanner.nextLine().trim();
                 if (input.equalsIgnoreCase("quit") || input.equalsIgnoreCase("exit")) {
-                    LOGGER.info("Goodbye!");
+                    System.out.println("Goodbye!");
                     break;
                 }
                 if (input.isBlank()) continue;
@@ -88,7 +88,8 @@ public class Main {
                 events.blockingForEach(event -> {
                     if (event.finalResponse()) {
                         String response = event.stringifyContent();
-                        LOGGER.info("Agent: " + (response != null && !response.isBlank() ? response : "(no response)"));
+                        System.out.println("Agent: " + (response != null && !response.isBlank() ? response : "(no response)"));
+                        System.out.println();
                     }
                 });
             }

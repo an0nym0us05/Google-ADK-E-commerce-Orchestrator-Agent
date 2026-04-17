@@ -9,7 +9,7 @@ import com.google.adk.tools.Annotations;
 
 public class OrderTools {
 
-    private static volatile OrderTools MY_INSTANCE;
+    private static volatile OrderTools INSTANCE;
 
     private final OrderRepository orderRepository;
 
@@ -21,7 +21,7 @@ public class OrderTools {
      * Registers the instance to be used by the static tool methods required by ADK FunctionTool.
      */
     public static void register(OrderTools instance) {
-        MY_INSTANCE = instance;
+        INSTANCE = instance;
     }
 
     // -------------------------------------------------------------------------
@@ -30,10 +30,10 @@ public class OrderTools {
     // -------------------------------------------------------------------------
 
     private static OrderTools requireInstance() {
-        if (MY_INSTANCE == null) {
+        if (INSTANCE == null) {
             throw new IllegalStateException("OrderTools not registered. Call OrderTools.register() before using tool methods.");
         }
-        return MY_INSTANCE;
+        return INSTANCE;
     }
 
     @Annotations.Schema(name = "getOrderById", description = "Get order details by order ID")
