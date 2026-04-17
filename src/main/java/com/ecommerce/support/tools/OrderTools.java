@@ -1,15 +1,15 @@
 package com.ecommerce.support.tools;
 
+import java.util.List;
+import java.util.Optional;
+
 import com.ecommerce.support.model.Order;
 import com.ecommerce.support.repository.OrderRepository;
 import com.google.adk.tools.Annotations;
 
-import java.util.List;
-import java.util.Optional;
-
 public class OrderTools {
 
-    private static volatile OrderTools INSTANCE;
+    private static volatile OrderTools MY_INSTANCE;
 
     private final OrderRepository orderRepository;
 
@@ -21,7 +21,7 @@ public class OrderTools {
      * Registers the instance to be used by the static tool methods required by ADK FunctionTool.
      */
     public static void register(OrderTools instance) {
-        INSTANCE = instance;
+        MY_INSTANCE = instance;
     }
 
     // -------------------------------------------------------------------------
@@ -29,28 +29,26 @@ public class OrderTools {
     // @Schema(name=...) ensures the LLM sees the canonical tool name.
     // -------------------------------------------------------------------------
 
-    @Annotations.Schema(name = "getOrderById", description = "Get order details by order ID")
-    public static String getOrderByIdTool(String orderId) {
-        if (INSTANCE == null) {
+    private static OrderTools requireInstance() {
+        if (MY_INSTANCE == null) {
             throw new IllegalStateException("OrderTools not registered. Call OrderTools.register() before using tool methods.");
         }
-        return INSTANCE.getOrderById(orderId);
+        return MY_INSTANCE;
+    }
+
+    @Annotations.Schema(name = "getOrderById", description = "Get order details by order ID")
+    public static String getOrderByIdTool(String orderId) {
+        return requireInstance().getOrderById(orderId);
     }
 
     @Annotations.Schema(name = "listOrdersByCustomer", description = "List all orders for a customer")
     public static String listOrdersByCustomerTool(String customerId) {
-        if (INSTANCE == null) {
-            throw new IllegalStateException("OrderTools not registered. Call OrderTools.register() before using tool methods.");
-        }
-        return INSTANCE.listOrdersByCustomer(customerId);
+        return requireInstance().listOrdersByCustomer(customerId);
     }
 
     @Annotations.Schema(name = "trackOrder", description = "Track the shipment status of an order")
     public static String trackOrderTool(String orderId) {
-        if (INSTANCE == null) {
-            throw new IllegalStateException("OrderTools not registered. Call OrderTools.register() before using tool methods.");
-        }
-        return INSTANCE.trackOrder(orderId);
+        return requireInstance().trackOrder(orderId);
     }
 
     // -------------------------------------------------------------------------
@@ -82,7 +80,7 @@ public class OrderTools {
         }
         StringBuilder sb = new StringBuilder("Orders for customer " + customerId + ":\n");
         orders.forEach(o -> sb.append(String.format(
-            "  - %s | Status: %s | Total: $%.2f | Placed: %s\n",
+            "  - %s | Status: %s | Total: $%.2f | Placed: %s%n",
             o.id(), o.status(), o.total(), o.createdAt())));
         return sb.toString().trim();
     }

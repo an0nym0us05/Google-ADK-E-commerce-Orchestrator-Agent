@@ -1,14 +1,14 @@
 package com.ecommerce.support.tools;
 
-import com.ecommerce.support.model.Refund;
-import com.ecommerce.support.repository.OrderRepository;
-import com.ecommerce.support.repository.RefundRepository;
-import com.google.adk.tools.Annotations;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.ecommerce.support.model.Refund;
+import com.ecommerce.support.repository.OrderRepository;
+import com.ecommerce.support.repository.RefundRepository;
+import com.google.adk.tools.Annotations;
 
 public class RefundTools {
 
@@ -34,28 +34,26 @@ public class RefundTools {
     // @Schema(name=...) ensures the LLM sees the canonical tool name.
     // -------------------------------------------------------------------------
 
-    @Annotations.Schema(name = "getRefundStatus", description = "Get the status of a refund by refund ID")
-    public static String getRefundStatusTool(String refundId) {
+    private static RefundTools requireInstance() {
         if (INSTANCE == null) {
             throw new IllegalStateException("RefundTools not registered. Call RefundTools.register() before using tool methods.");
         }
-        return INSTANCE.getRefundStatus(refundId);
+        return INSTANCE;
+    }
+
+    @Annotations.Schema(name = "getRefundStatus", description = "Get the status of a refund by refund ID")
+    public static String getRefundStatusTool(String refundId) {
+        return requireInstance().getRefundStatus(refundId);
     }
 
     @Annotations.Schema(name = "createRefundRequest", description = "Create a new refund request for an order")
     public static String createRefundRequestTool(String orderId, String reason) {
-        if (INSTANCE == null) {
-            throw new IllegalStateException("RefundTools not registered. Call RefundTools.register() before using tool methods.");
-        }
-        return INSTANCE.createRefundRequest(orderId, reason);
+        return requireInstance().createRefundRequest(orderId, reason);
     }
 
     @Annotations.Schema(name = "listRefundsByCustomer", description = "List all refunds for a customer")
     public static String listRefundsByCustomerTool(String customerId) {
-        if (INSTANCE == null) {
-            throw new IllegalStateException("RefundTools not registered. Call RefundTools.register() before using tool methods.");
-        }
-        return INSTANCE.listRefundsByCustomer(customerId);
+        return requireInstance().listRefundsByCustomer(customerId);
     }
 
     // -------------------------------------------------------------------------
@@ -105,7 +103,7 @@ public class RefundTools {
         }
         StringBuilder sb = new StringBuilder("Refunds for customer " + customerId + ":\n");
         refunds.forEach(r -> sb.append(String.format(
-            "  - %s | Order: %s | Status: %s | Reason: %s\n",
+            "  - %s | Order: %s | Status: %s | Reason: %s%n",
             r.id(), r.orderId(), r.status(), r.reason())));
         return sb.toString().trim();
     }

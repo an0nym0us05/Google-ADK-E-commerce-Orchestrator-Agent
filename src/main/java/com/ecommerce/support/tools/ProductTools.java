@@ -29,28 +29,26 @@ public class ProductTools {
     // @Schema(name=...) ensures the LLM sees the canonical tool name.
     // -------------------------------------------------------------------------
 
-    @Annotations.Schema(name = "getProductById", description = "Get product details by product ID")
-    public static String getProductByIdTool(String productId) {
+    private static ProductTools requireInstance() {
         if (INSTANCE == null) {
             throw new IllegalStateException("ProductTools not registered. Call ProductTools.register() before using tool methods.");
         }
-        return INSTANCE.getProductById(productId);
+        return INSTANCE;
+    }
+
+    @Annotations.Schema(name = "getProductById", description = "Get product details by product ID")
+    public static String getProductByIdTool(String productId) {
+        return requireInstance().getProductById(productId);
     }
 
     @Annotations.Schema(name = "searchProducts", description = "Search products by keyword")
     public static String searchProductsTool(String keyword) {
-        if (INSTANCE == null) {
-            throw new IllegalStateException("ProductTools not registered. Call ProductTools.register() before using tool methods.");
-        }
-        return INSTANCE.searchProducts(keyword);
+        return requireInstance().searchProducts(keyword);
     }
 
     @Annotations.Schema(name = "checkProductAvailability", description = "Check stock availability of a product")
     public static String checkProductAvailabilityTool(String productId) {
-        if (INSTANCE == null) {
-            throw new IllegalStateException("ProductTools not registered. Call ProductTools.register() before using tool methods.");
-        }
-        return INSTANCE.checkProductAvailability(productId);
+        return requireInstance().checkProductAvailability(productId);
     }
 
     // -------------------------------------------------------------------------
