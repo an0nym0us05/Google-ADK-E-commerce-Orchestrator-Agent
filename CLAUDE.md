@@ -29,7 +29,7 @@ mvn exec:java -Dexec.mainClass="com.ecommerce.support.Main"
 
 | Layer | Technology |
 |---|---|
-| Language | Java 17 |
+| Language | Java 21 |
 | Build | Maven |
 | AI Agent Framework | Google Agent Development Kit (ADK) 1.0.0 — `com.google.adk` |
 | LLM | Gemini 2.5 Flash via Google AI Studio (`GOOGLE_API_KEY`) |
