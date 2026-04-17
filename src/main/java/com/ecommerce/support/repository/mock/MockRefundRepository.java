@@ -4,8 +4,10 @@ import com.ecommerce.support.model.Refund;
 import com.ecommerce.support.repository.RefundRepository;
 
 import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public class MockRefundRepository implements RefundRepository {
 
@@ -20,7 +22,7 @@ public class MockRefundRepository implements RefundRepository {
             new Refund("REF-001", "ORD-002", "CUST-001",
                 "COMPLETED", "Item damaged on arrival", LocalDate.of(2026, 3, 10)),
             new Refund("REF-002", "ORD-004", "CUST-002",
-                "APPROVED", "Changed my mind", LocalDate.of(2026, 3, 22)),
+                "COMPLETED", "Changed my mind", LocalDate.of(2026, 3, 22)),
             new Refund("REF-003", "ORD-005", "CUST-003",
                 "PENDING", "Wrong item received", LocalDate.of(2026, 2, 17))
         ).forEach(r -> refunds.put(r.id(), r));
@@ -37,7 +39,7 @@ public class MockRefundRepository implements RefundRepository {
         if (customerId == null || customerId.isBlank()) return List.of();
         return refunds.values().stream()
             .filter(r -> r.customerId().equals(customerId))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.ecommerce.support;
 
 import java.util.List;
 import java.util.Scanner;
+import java.util.logging.Logger;
 
 import com.ecommerce.support.orchestrator.SupportOrchestratorAgent;
 import com.ecommerce.support.repository.mock.MockOrderRepository;
@@ -23,13 +24,14 @@ import io.reactivex.rxjava3.core.Flowable;
 
 public class Main {
 
+    private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
     private static final String APP_NAME = "ecommerce-support";
     private static final String USER_ID = "user-001";
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         String apiKey = System.getenv("GOOGLE_API_KEY");
         if (apiKey == null || apiKey.isBlank()) {
-            System.err.println("Error: GOOGLE_API_KEY environment variable is not set.");
+            LOGGER.severe("Error: GOOGLE_API_KEY environment variable is not set.");
             System.exit(1);
         }
 
@@ -54,45 +56,43 @@ public class Main {
 
         // Wire runner
         Runner runner = Runner.builder()
-        .agent(orchestrator)
-        .appName(APP_NAME)
-        .sessionService(sessionService)
-        .build();
+                .agent(orchestrator)
+                .appName(APP_NAME)
+                .sessionService(sessionService)
+                .build();
 
         // Start Dev UI on a background (non-daemon) thread so the CLI loop can run alongside it
         Thread devUiThread = new Thread(() -> AdkWebServer.start(orchestrator), "adk-dev-ui");
         devUiThread.setDaemon(false);
         devUiThread.start();
 
-        // Then your Scanner loop continues as-is
-        System.out.println("E-Commerce Support Agent ready...");
-        System.out.println("Dev UI available at http://localhost:8080");
-        System.out.println("E-Commerce Support Agent ready. Type 'quit' to exit.\n");
+        LOGGER.info("E-Commerce Support Agent ready...");
+        LOGGER.info("Dev UI available at http://localhost:8080");
+        LOGGER.info("E-Commerce Support Agent ready. Type 'quit' to exit.");
 
-        Scanner scanner = new Scanner(System.in);
-        while (true) {
-            System.out.print("You: ");
-            String input = scanner.nextLine().trim();
-            if (input.equalsIgnoreCase("quit") || input.equalsIgnoreCase("exit")) {
-                System.out.println("Goodbye!");
-                break;
-            }
-            if (input.isBlank()) continue;
-
-            Content userMessage = Content.builder()
-                    .role("user")
-                    .parts(List.of(Part.fromText(input)))
-                    .build();
-
-            Flowable<Event> events = runner.runAsync(USER_ID, session.id(), userMessage);
-            events.blockingForEach(event -> {
-                if (event.finalResponse()) {
-                    String response = event.stringifyContent();
-                    System.out.println("Agent: " + (response != null && !response.isBlank() ? response : "(no response)"));
-                    System.out.println();
+        try (Scanner scanner = new Scanner(System.in)) {
+            while (true) {
+                System.out.print("You: ");
+                String input = scanner.nextLine().trim();
+                if (input.equalsIgnoreCase("quit") || input.equalsIgnoreCase("exit")) {
+                    System.out.println("Goodbye!");
+                    break;
                 }
-            });
+                if (input.isBlank()) continue;
+                Content userMessage = Content.builder()
+                        .role("user")
+                        .parts(List.of(Part.fromText(input)))
+                        .build();
+
+                Flowable<Event> events = runner.runAsync(USER_ID, session.id(), userMessage);
+                events.blockingForEach(event -> {
+                    if (event.finalResponse()) {
+                        String response = event.stringifyContent();
+                        System.out.println("Agent: " + (response != null && !response.isBlank() ? response : "(no response)"));
+                        System.out.println();
+                    }
+                });
+            }
         }
-        scanner.close();
     }
 }

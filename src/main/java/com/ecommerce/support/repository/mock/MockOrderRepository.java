@@ -4,8 +4,10 @@ import com.ecommerce.support.model.Order;
 import com.ecommerce.support.repository.OrderRepository;
 
 import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public class MockOrderRepository implements OrderRepository {
 
@@ -46,6 +48,6 @@ public class MockOrderRepository implements OrderRepository {
         if (customerId == null || customerId.isBlank()) return List.of();
         return orders.values().stream()
             .filter(o -> o.customerId().equals(customerId))
-            .collect(Collectors.toList());
+            .toList();
     }
 }
