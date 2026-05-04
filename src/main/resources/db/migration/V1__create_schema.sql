@@ -3,8 +3,8 @@ CREATE TABLE orders (
     id                VARCHAR(50)       PRIMARY KEY,
     customer_id       VARCHAR(50)       NOT NULL,
     status            VARCHAR(50)       NOT NULL,
-    items             TEXT              NOT NULL,
-    total             DOUBLE PRECISION  NOT NULL,
+    items             JSONB              NOT NULL,
+    total             NUMERIC(12, 2)    NOT NULL,
     created_at        DATE              NOT NULL,
     estimated_delivery DATE
 );
@@ -13,7 +13,7 @@ CREATE TABLE products (
     id             VARCHAR(50)       PRIMARY KEY,
     name           VARCHAR(200)      NOT NULL,
     description    TEXT,
-    price          DOUBLE PRECISION  NOT NULL,
+    price          NUMERIC(12, 2)    NOT NULL,
     stock_quantity INTEGER           NOT NULL,
     category       VARCHAR(100)
 );

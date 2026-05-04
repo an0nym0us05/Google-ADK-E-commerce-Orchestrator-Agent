@@ -47,7 +47,8 @@ public class Main {
         final RefundRepository refundRepo;
         final ProductRepository productRepo;
 
-        if (System.getenv("DATABASE_URL") != null) {
+        if (System.getenv("DATABASE_URL") != null && System.getenv("DATABASE_USER") != null
+          && System.getenv("DATABASE_PASSWORD") != null) {
             javax.sql.DataSource dataSource = DatabaseConfig.createDataSource();
             org.flywaydb.core.Flyway.configure()
                 .dataSource(dataSource)
