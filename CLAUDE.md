@@ -35,9 +35,10 @@ mvn exec:java -Dexec.mainClass="com.ecommerce.support.Main"
 | LLM | Gemini 2.5 Flash via Google AI Studio (`GOOGLE_API_KEY`) |
 | Dev UI | `google-adk-dev` 1.0.0 — Spring Boot embedded server on port 8080 |
 | Async/streaming | RxJava 3 (`Flowable`, `blockingForEach`) |
-| Testing | JUnit 5 (Jupiter) |
+| Testing | JUnit 5 (Jupiter) + Testcontainers |
 | Data models | Java records |
 | Session state | `InMemorySessionService` (ADK built-in) |
+| Database (optional) | PostgreSQL via Spring JDBC + HikariCP + Flyway |
 
 ---
 
@@ -71,12 +72,15 @@ Both interfaces share the same `orchestrator` agent instance but have **separate
 ### Wiring Order in Main.java
 
 ```
-MockRepository → *Tools → *Agent.create() → SupportOrchestratorAgent.create()
-                                                        │
-                              ┌─────────────────────────┤
-                              │                         │
-                    Runner.builder()             AdkWebServer.start()
-                    (CLI path)                   (Dev UI path)
+DATABASE_URL set? ──yes──▶ JdbcRepository (HikariCP + Flyway migrate)
+                  ──no───▶ MockRepository
+
+Repository → *Tools → *Agent.create() → SupportOrchestratorAgent.create()
+                                                    │
+                          ┌─────────────────────────┤
+                          │                         │
+                Runner.builder()             AdkWebServer.start()
+                (CLI path)                   (Dev UI path)
 ```
 
 ---
@@ -106,13 +110,40 @@ public class OrderTools {
 
 `register()` is called inside each agent's `create()` factory method. The `@Annotations.Schema` name is what the LLM sees — keep it a clean verb phrase with no "Tool" suffix (the suffix is only on the Java method to distinguish it).
 
-### Repository Interface → Mock Implementation
+### Repository Interface → Two Implementations
 
-All data access goes through interfaces (`OrderRepository`, `ProductRepository`, `RefundRepository`). The only implementations today are in-memory mocks under `repository/mock/`. This is intentional: replacing with a real database (e.g. PostgreSQL via JPA) only requires a new implementation — no changes to tools or agents.
+All data access goes through interfaces (`OrderRepository`, `ProductRepository`, `RefundRepository`). There are two implementations:
+
+- `repository/mock/` — in-memory, zero-dependency, used when `DATABASE_URL` is not set
+- `repository/jdbc/` — Spring `JdbcTemplate` backed by PostgreSQL, selected at startup when all three DB env vars are present
+
+Adding a third implementation (e.g. a different database) requires only a new class — no changes to tools or agents.
 
 ### Agent Factory Method Pattern
 
 Each agent class (`OrderAgent`, `RefundAgent`, `ProductAgent`, `SupportOrchestratorAgent`) has a private constructor and a single static `create(...)` factory. This prevents accidental instantiation and keeps the agent graph assembly in one place per agent.
+
+---
+
+## Database Configuration
+
+When `DATABASE_URL`, `DATABASE_USER`, and `DATABASE_PASSWORD` are all set, `Main` uses the JDBC repositories and runs Flyway migrations at startup.
+
+```bash
+export DATABASE_URL=jdbc:postgresql://localhost:5432/ecommerce
+export DATABASE_USER=postgres
+export DATABASE_PASSWORD=secret
+mvn exec:java -Dexec.mainClass="com.ecommerce.support.Main"
+```
+
+Flyway migrations live in `src/main/resources/db/migration/`:
+
+| Migration | Description |
+|---|---|
+| `V1__create_schema.sql` | Creates `orders`, `products`, `refunds` tables with indexes |
+| `V2__seed_data.sql` | Seeds the same data as the mock repositories |
+
+Schema notes: monetary columns (`price`, `total`) use `NUMERIC(12,2)`; `orders.items` is stored as `JSONB`.
 
 ---
 
@@ -129,24 +160,32 @@ All models are Java `record` types (immutable):
 Order statuses: `PROCESSING`, `SHIPPED`, `DELIVERED`, `CANCELLED`
 Refund statuses: `PENDING`, `COMPLETED`
 
-### Seeded Mock Data Reference
+### Seeded Data Reference
+
+Both mock repositories and `V2__seed_data.sql` are seeded with the same data:
 
 - Customers: `CUST-001`, `CUST-002`, `CUST-003`
 - Orders: `ORD-001` (SHIPPED) · `ORD-002` (DELIVERED) · `ORD-003` (PROCESSING) · `ORD-004` (CANCELLED) · `ORD-005` (DELIVERED)
-- Refunds: `REF-001` (COMPLETED, CUST-001)
+- Refunds: `REF-001` (COMPLETED, CUST-001) · `REF-002` (COMPLETED, CUST-002) · `REF-003` (PENDING, CUST-003)
 - Products: `PROD-001` to `PROD-010` across Electronics, Accessories, Footwear, Kitchen categories
 
 ---
 
 ## Testing Approach
 
-Tests exercise **instance methods** directly — no mocking frameworks, no Spring context, no LLM calls. Each test class:
+### Unit tests (`tools/`)
+
+Exercise **instance methods** directly — no mocking frameworks, no Spring context, no LLM calls. Each test class:
 
 1. Instantiates a `Mock*Repository` in `@BeforeEach`
 2. Constructs the `*Tools` instance with it
 3. Calls the public instance method and asserts on the returned string
 
-This keeps tests fast and fully offline. The static tool methods are not tested separately since they are thin delegators — if the instance method works, the static method works once registered.
+Fast and fully offline. The static tool methods are not tested separately since they are thin delegators.
+
+### Integration tests (`repository/jdbc/`)
+
+`JdbcOrderRepositoryIT`, `JdbcProductRepositoryIT`, `JdbcRefundRepositoryIT` use **Testcontainers** to spin up a real `postgres:16` container. Each test runs `flyway.clean(); flyway.migrate()` in `@BeforeEach` for full isolation. Requires Docker at test time.
 
 ---
 
@@ -160,7 +199,7 @@ This codebase is a reference implementation for the following real-world scenari
 
 **Domain-Isolated Tool Ownership** — When different teams own different data domains, each team can own one sub-agent + tools + repository, with the orchestrator as a shared contract. Changes to the refund flow don't touch the order agent.
 
-**Replacing Mock Repositories** — The repository interface layer makes this production-ready: swap `MockOrderRepository` for a Spring Data JPA or JDBC implementation backed by PostgreSQL (noted as a planned future change in this repo).
+**Replacing Mock Repositories** — The repository interface layer makes this production-ready: the `repository/jdbc/` package already provides Spring JDBC implementations backed by PostgreSQL, selected at runtime via env vars.
 
 **Extending with New Intents** — Adding a new support domain (e.g. shipping carrier integration) requires: a new `*Repository` interface + mock, a new `*Tools` class, a new `*Agent` factory, and one `AgentTool.create(newAgent)` line in `SupportOrchestratorAgent`.
 
@@ -168,4 +207,6 @@ This codebase is a reference implementation for the following real-world scenari
 
 ## To-dos (Future Work)
 
-- Replace mock repositories with PostgreSQL — implement `*Repository` interfaces using JPA/JDBC; no changes needed to tools or agents.
+- Extract IT test boilerplate into a shared base class (`AbstractJdbcRepositoryIT`)
+- Replace explicit column lists in JDBC repositories (currently using `SELECT *`)
+- Add a `DATABASE_URL` command in the `Commands` section once a local Docker Compose setup is added

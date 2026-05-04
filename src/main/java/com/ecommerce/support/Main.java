@@ -4,7 +4,14 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
+import com.ecommerce.support.config.DatabaseConfig;
 import com.ecommerce.support.orchestrator.SupportOrchestratorAgent;
+import com.ecommerce.support.repository.OrderRepository;
+import com.ecommerce.support.repository.ProductRepository;
+import com.ecommerce.support.repository.RefundRepository;
+import com.ecommerce.support.repository.jdbc.JdbcOrderRepository;
+import com.ecommerce.support.repository.jdbc.JdbcProductRepository;
+import com.ecommerce.support.repository.jdbc.JdbcRefundRepository;
 import com.ecommerce.support.repository.mock.MockOrderRepository;
 import com.ecommerce.support.repository.mock.MockProductRepository;
 import com.ecommerce.support.repository.mock.MockRefundRepository;
@@ -35,10 +42,26 @@ public class Main {
             System.exit(1);
         }
 
-        // Wire up repositories
-        MockOrderRepository orderRepo = new MockOrderRepository();
-        MockRefundRepository refundRepo = new MockRefundRepository();
-        MockProductRepository productRepo = new MockProductRepository();
+        // Wire up repositories — PostgreSQL when DATABASE_URL is set, mocks otherwise
+        final OrderRepository orderRepo;
+        final RefundRepository refundRepo;
+        final ProductRepository productRepo;
+
+        if (System.getenv("DATABASE_URL") != null && System.getenv("DATABASE_USER") != null
+          && System.getenv("DATABASE_PASSWORD") != null) {
+            javax.sql.DataSource dataSource = DatabaseConfig.createDataSource();
+            org.flywaydb.core.Flyway.configure()
+                .dataSource(dataSource)
+                .load()
+                .migrate();
+            orderRepo   = new JdbcOrderRepository(dataSource);
+            refundRepo  = new JdbcRefundRepository(dataSource);
+            productRepo = new JdbcProductRepository(dataSource);
+        } else {
+            orderRepo   = new MockOrderRepository();
+            refundRepo  = new MockRefundRepository();
+            productRepo = new MockProductRepository();
+        }
 
         // Wire up tools
         OrderTools orderTools = new OrderTools(orderRepo);
